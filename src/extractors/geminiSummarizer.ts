@@ -54,21 +54,73 @@ export async function summarizeWithGeminiAI(
 
         // Create a prompt that clearly specifies what we want the model to do
         let prompt = isArabic
-            ? `أرجو تلخيص النص التالي في ${sentenceCount} جمل أو أقل، مع الحفاظ على النقاط الرئيسية والمعلومات الأساسية.${geminiConfig.objective ? ' يجب أن يكون التلخيص موضوعيًا تمامًا، دون أي آراء أو استنتاجات شخصية. اقتصر فقط على الحقائق والمعلومات الواردة في النص الأصلي.' : ''
+            ? `أرجو تلخيص النص التالي في ${sentenceCount} جمل أو أقل، مع الحفاظ على النقاط الرئيسية والمعلومات الأساسية. يجب أن تكون كل جملة كاملة ومنتهية بعلامة ترقيم مناسبة. النص يجب أن يكون مفهوماً ومتماسكاً.${geminiConfig.objective ? ' يجب أن يكون التلخيص موضوعيًا تمامًا، دون أي آراء أو استنتاجات شخصية. اقتصر فقط على الحقائق والمعلومات الواردة في النص الأصلي.' : ''
             } النص هو:\n\n${text}`
-            : `Please summarize the following text in ${sentenceCount} sentences or less, preserving the key points and essential information.${geminiConfig.objective ? ' Your summary must be completely objective, without any opinions or personal interpretations. Stick strictly to the facts and information presented in the original text.' : ''
+            : `Please summarize the following text in ${sentenceCount} sentences or less, preserving the key points and essential information. Each sentence must be complete and end with appropriate punctuation. The text should be coherent and flow naturally.${geminiConfig.objective ? ' Your summary must be completely objective, without any opinions or personal interpretations. Stick strictly to the facts and information presented in the original text.' : ''
             } The text is:\n\n${text}`;
 
         // Generate content using the model
         const result = await model.generateContent(prompt);
         const response = result.response;
 
-        // Return the text from the response
-        return response.text().trim();
+        // Get the summary text and ensure it ends with proper punctuation
+        let summaryText = response.text().trim();
+
+        // Post-process the summary to ensure complete sentences
+        summaryText = ensureCompleteSentences(summaryText, isArabic);
+
+        return summaryText;
     } catch (error) {
         console.error('Error using Gemini API for summarization:', error);
         throw new Error(`Failed to summarize using Gemini AI: ${error instanceof Error ? error.message : String(error)}`);
     }
+}
+
+/**
+ * Post-processes a summary to ensure all sentences are complete
+ * @param text The summary text to process
+ * @param isArabic Whether the text is in Arabic
+ * @returns The processed summary with complete sentences
+ */
+function ensureCompleteSentences(text: string, isArabic: boolean): string {
+    // Define sentence terminators for both languages
+    const terminators = isArabic ? ['.', '!', '؟', '؛', ':', '…'] : ['.', '!', '?', ';', ':', '...'];
+
+    // Check if the text ends with a terminator
+    const endsWithTerminator = terminators.some(term => text.endsWith(term));
+    if (!endsWithTerminator) {
+        // Add a period if the text doesn't end with a terminator
+        text += isArabic ? '.' : '.';
+    }
+
+    // Ensure spaces between sentences (for readability)
+    let processedText = text;
+
+    // Replace multiple spaces with a single space
+    processedText = processedText.replace(/\s+/g, ' ');
+
+    // For Arabic text, handle specific punctuation spacing
+    if (isArabic) {
+        // Ensure proper spacing in Arabic text
+        terminators.forEach(terminator => {
+            if (terminator !== '.') { // Skip period for Arabic as it's handled differently
+                const regex = new RegExp(`${terminator}\\s*`, 'g');
+                processedText = processedText.replace(regex, `${terminator} `);
+            }
+        });
+
+        // Handle Arabic period specifically (both Arabic and Latin periods)
+        processedText = processedText.replace(/\.\s*/g, '. ');
+    } else {
+        // For English, ensure space after punctuation
+        terminators.forEach(terminator => {
+            const regex = new RegExp(`${terminator}\\s*`, 'g');
+            processedText = processedText.replace(regex, `${terminator} `);
+        });
+    }
+
+    // Trim any trailing spaces
+    return processedText.trim();
 }
 
 /**

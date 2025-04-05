@@ -12,6 +12,7 @@ A powerful text summarization package for Arabic and English content that provid
 - **Reading Time Estimation**: Calculate estimated reading time
 - **Customizable Response**: Control which fields are included in the response
 - **Google Gemini AI Integration**: Optional high-quality summaries using Google's Gemini models
+- **Complete Sentence Guarantee**: Ensures all generated summaries contain grammatically complete sentences
 
 ## Installation
 
