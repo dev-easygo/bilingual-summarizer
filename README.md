@@ -172,7 +172,7 @@ console.log(summary); // Returns a concise summary with 3 sentences
 
 ### Optional Arabic NLP Libraries
 
-For enhanced Arabic text processing, the package attempts to use several Arabic NLP libraries if they're available. You may see console messages indicating that these libraries aren't found - this is normal and the package will fall back to basic processing methods.
+For enhanced Arabic text processing, the package attempts to use several Arabic NLP libraries if they're available. The built-in Arabic processing will work well without these libraries, but they can enhance the results.
 
 If you want to try optional Arabic NLP enhancements, you can install any of these packages:
 
@@ -181,10 +181,12 @@ npm install arabic-nlp
 # or
 npm install node-arabic
 # or
-npm install arabicjs
+npm install arabic-wordnet
+# or
+npm install ar-word-tokenizer
 ```
 
-Note: The availability and compatibility of Arabic NLP libraries varies. The package is designed to work without them, but may provide better results with them installed.
+Note: The availability and compatibility of Arabic NLP libraries varies. If you encounter installation issues or 404 errors, don't worry - the package will automatically fall back to using its built-in Arabic processing methods.
 
 ## API Reference
 
@@ -272,14 +274,21 @@ For the latest model names and capabilities, see the [Gemini documentation](http
 
 ## Troubleshooting
 
-### Arabic Libraries Not Found
+### Arabic Libraries Messages
 
-If you see messages like:
+If you see the message:
 ```
 Note: No specialized Arabic NLP libraries found. Using basic Arabic processing.
 ```
 
-This is normal and doesn't affect functionality. The package will use its built-in basic Arabic processing which works well for most cases. If you need enhanced Arabic processing, try installing one of the optional dependencies mentioned above.
+Don't worry - this is normal and does not affect functionality. The package has built-in basic Arabic processing that works well for most cases.
+
+If you see 404 errors when installing optional Arabic libraries:
+```
+GET https://registry.npmjs.org/arabicjs - 404
+```
+
+This is because some of the Arabic NLP packages suggested may no longer be available or maintained. The package is designed to work without these libraries. You can safely ignore these errors, or try installing one of the other suggested libraries.
 
 ### Gemini API Errors
 

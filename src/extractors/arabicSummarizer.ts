@@ -2,45 +2,45 @@ import { Sentence } from '../types';
 import { extractSentences } from '../utils/textPreprocessing';
 
 // Optional imports for specialized Arabic NLP libraries
-let camelTools: any = null;
-let farasa: any = null;
 let arabicNLP: any = null;
 let nodeArabic: any = null;
+let arabicWordnet: any = null;
+let arWordTokenizer: any = null;
 
 // Try to import alternative Arabic NLP libraries
 // We'll try multiple options in order of preference
 try {
-    // First try @iamtung/camel-tools (may be deprecated)
-    camelTools = require('@iamtung/camel-tools');
-} catch (error) {
-    // Silent fail - will try alternatives
-}
-
-try {
-    // Try farasa (may be deprecated)
-    farasa = require('farasa');
-} catch (error) {
-    // Silent fail - will try alternatives
-}
-
-try {
-    // Try arabic-nlp as alternative
+    // Try to load arabic-nlp
     arabicNLP = require('arabic-nlp');
 } catch (error) {
     // Silent fail - will try alternatives
 }
 
 try {
-    // Try node-arabic as another alternative
+    // Try to load node-arabic
     nodeArabic = require('node-arabic');
 } catch (error) {
     // Silent fail - will try alternatives
 }
 
+try {
+    // Try to load arabic-wordnet
+    arabicWordnet = require('arabic-wordnet');
+} catch (error) {
+    // Silent fail - will try alternatives
+}
+
+try {
+    // Try to load ar-word-tokenizer
+    arWordTokenizer = require('ar-word-tokenizer');
+} catch (error) {
+    // Silent fail - will try alternatives
+}
+
 // Log only once what's available
-if (!camelTools && !farasa && !arabicNLP && !nodeArabic) {
+if (!arabicNLP && !nodeArabic && !arabicWordnet && !arWordTokenizer) {
     console.log('Note: No specialized Arabic NLP libraries found. Using basic Arabic processing.');
-    console.log('For better Arabic results, consider alternatives like "arabic-linguist" or "arabicjs".');
+    console.log('Optional Arabic NLP libraries can improve results but are not required.');
 }
 
 /**
@@ -66,7 +66,7 @@ export function summarizeArabicText(text: string, sentenceCount: number = 5): st
 
         // Use advanced Arabic scoring if specialized libraries are available
         // Otherwise fall back to basic scoring
-        const scoredSentences = hasFarasaOrCamel()
+        const scoredSentences = hasAnyArabicLibrary()
             ? scoreArabicSentencesAdvanced(sentences)
             : scoreArabicSentencesBasic(sentences);
 
@@ -93,8 +93,8 @@ export function summarizeArabicText(text: string, sentenceCount: number = 5): st
  * Check if we have any of the specialized Arabic NLP libraries available
  * @returns Boolean indicating if any specialized libraries are available
  */
-function hasFarasaOrCamel(): boolean {
-    return Boolean(camelTools || farasa || arabicNLP || nodeArabic);
+function hasAnyArabicLibrary(): boolean {
+    return Boolean(arabicNLP || nodeArabic || arabicWordnet || arWordTokenizer);
 }
 
 /**
@@ -114,25 +114,7 @@ function scoreArabicSentencesAdvanced(sentences: string[]): Sentence[] {
         let words: string[] = [];
         let nouns: string[] = [];
 
-        if (camelTools) {
-            try {
-                // Use CamelTools for morphological analysis if available
-                const analysis = camelTools.analyze(sentence);
-                words = analysis.tokens || sentence.split(/\s+/);
-                nouns = analysis.nouns || [];
-            } catch (e) {
-                words = sentence.split(/\s+/);
-            }
-        } else if (farasa) {
-            try {
-                // Use Farasa if available
-                const analysis = farasa.segment(sentence);
-                words = analysis.split(/\s+/);
-                // Farasa doesn't have direct noun detection
-            } catch (e) {
-                words = sentence.split(/\s+/);
-            }
-        } else if (arabicNLP) {
+        if (arabicNLP) {
             try {
                 // Use arabic-nlp if available
                 const analysis = arabicNLP.segment(sentence);
@@ -146,6 +128,22 @@ function scoreArabicSentencesAdvanced(sentences: string[]): Sentence[] {
                 // Use node-arabic if available
                 const analysis = nodeArabic.tokenize(sentence);
                 words = analysis || sentence.split(/\s+/);
+            } catch (e) {
+                words = sentence.split(/\s+/);
+            }
+        } else if (arWordTokenizer) {
+            try {
+                // Use ar-word-tokenizer if available
+                const tokens = arWordTokenizer.tokenize(sentence);
+                words = tokens || sentence.split(/\s+/);
+            } catch (e) {
+                words = sentence.split(/\s+/);
+            }
+        } else if (arabicWordnet) {
+            try {
+                // Use arabic-wordnet if available
+                const tokens = arabicWordnet.tokenize(sentence);
+                words = tokens || sentence.split(/\s+/);
             } catch (e) {
                 words = sentence.split(/\s+/);
             }

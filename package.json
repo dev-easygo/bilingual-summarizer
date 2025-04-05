@@ -28,7 +28,8 @@
   "optionalDependencies": {
     "arabic-nlp": "^1.0.0",
     "node-arabic": "^0.2.0",
-    "arabicjs": "^1.0.0"
+    "arabic-wordnet": "^0.1.0",
+    "ar-word-tokenizer": "^0.0.3"
   },
   "jest": {
     "preset": "ts-jest",
