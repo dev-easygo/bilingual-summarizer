@@ -27,7 +27,6 @@ export interface GeminiConfig {
     model?: string;
     temperature?: number;
     maxOutputTokens?: number;
-    objective?: boolean;
 }
 
 export interface SummarizeOptions {

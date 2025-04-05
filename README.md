@@ -69,14 +69,27 @@ const result = await summarize('Your text to summarize here.', {
     model: 'gemini-1.5-flash',     // Optional, defaults to gemini-1.5-flash
     temperature: 0.2,              // Optional, controls creativity (0.0-1.0)
     maxOutputTokens: 800,          // Optional, limits response length
-    objective: true                // Optional, forces strictly factual summaries without opinions
+    objective: true                // Optional, defined in the interface but not currently implemented in the prompt
   }
 });
 
 console.log(result);
 ```
 
-The AI prompt uses a professionally formatted template with clear instructions for both English and Arabic text, ensuring high-quality summaries with complete sentences. The prompt is provided in English regardless of the input language, as Gemini models have strong multilingual capabilities.
+The AI summarization uses a specialized prompt designed for both Arabic and English text. The current prompt format instructs the model to act as a professional linguist in the detected language, creating a brief summary with complete sentences. The prompt is provided in English regardless of the input language, as Gemini models have strong multilingual capabilities.
+
+The prompt structure is:
+```
+Context:  
+You are a professional linguist in the [detected language]. Your task is to create a brief summary of articles and posts in a paragraph containing no more than [N] complete sentences.
+
+Instructions:  
+Analyze the text carefully. Do not use bullet points or numbered lists. Provide a unique, complete summary as your answer, and ensure it is written in the [detected language].
+
+Input:  
+The text to summarize is:  
+[Original text]
+```
 
 You can also directly use the Gemini AI summarizer:
 
@@ -85,10 +98,10 @@ const { summarizeWithAI } = require('bilingual-summarizer');
 
 const summary = await summarizeWithAI('Your text to summarize.', 3, {
   apiKey: 'YOUR_GEMINI_API_KEY',
-  objective: true // Ensure factual, non-opinionated summaries
+  objective: true // Optional, defined in the interface but not currently implemented in the prompt
 });
 
-console.log(summary); // AI-generated objective summary with 3 sentences
+console.log(summary); // AI-generated summary with 3 sentences
 ```
 
 ### OpenAI Compatibility (Alternative Method)
@@ -214,7 +227,7 @@ Analyze and summarize the provided text.
     - `model` (string): The Gemini model to use (default: 'gemini-1.5-flash').
     - `temperature` (number): Controls creativity in the output (default: 0.2).
     - `maxOutputTokens` (number): Limits response length (default: 800).
-    - `objective` (boolean): When true, instructs the AI to provide strictly factual summaries without opinions or interpretations (default: false).
+    - `objective` (boolean): Defined in the interface for future implementation (not currently used).
 
 **Returns:** A Promise that resolves to an object with the following properties (unless filtered by responseStructure):
 - `ok` (boolean): Whether the summarization was successful.
@@ -253,7 +266,7 @@ Directly summarize text using Google's Gemini AI models.
   - `model` (string): The Gemini model to use (default: 'gemini-1.5-flash').
   - `temperature` (number): Controls creativity in the output (default: 0.2).
   - `maxOutputTokens` (number): Limits response length (default: 800).
-  - `objective` (boolean): When true, generates strictly factual summaries without opinions (default: false).
+  - `objective` (boolean): Defined in the interface for future implementation (not currently used).
 
 **Returns:** A Promise that resolves to the AI-generated summary.
 

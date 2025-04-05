@@ -70,10 +70,7 @@ ${text}`;
         const response = result.response;
 
         // Get the summary text and ensure it ends with proper punctuation
-        let summaryText = response.text().trim();
-
-        // Post-process the summary to ensure complete sentences
-        summaryText = ensureCompleteSentences(summaryText, isArabic);
+        const summaryText = response.text().trim();
 
         return summaryText;
     } catch (error) {
@@ -82,52 +79,6 @@ ${text}`;
     }
 }
 
-/**
- * Post-processes a summary to ensure all sentences are complete
- * @param text The summary text to process
- * @param isArabic Whether the text is in Arabic
- * @returns The processed summary with complete sentences
- */
-function ensureCompleteSentences(text: string, isArabic: boolean): string {
-    // Define sentence terminators for both languages
-    const terminators = isArabic ? ['.', '!', '؟', '؛', ':', '…'] : ['.', '!', '?', ';', ':', '...'];
-
-    // Check if the text ends with a terminator
-    const endsWithTerminator = terminators.some(term => text.endsWith(term));
-    if (!endsWithTerminator) {
-        // Add a period if the text doesn't end with a terminator
-        text += isArabic ? '.' : '.';
-    }
-
-    // Ensure spaces between sentences (for readability)
-    let processedText = text;
-
-    // Replace multiple spaces with a single space
-    processedText = processedText.replace(/\s+/g, ' ');
-
-    // For Arabic text, handle specific punctuation spacing
-    if (isArabic) {
-        // Ensure proper spacing in Arabic text
-        terminators.forEach(terminator => {
-            if (terminator !== '.') { // Skip period for Arabic as it's handled differently
-                const regex = new RegExp(`${terminator}\\s*`, 'g');
-                processedText = processedText.replace(regex, `${terminator} `);
-            }
-        });
-
-        // Handle Arabic period specifically (both Arabic and Latin periods)
-        processedText = processedText.replace(/\.\s*/g, '. ');
-    } else {
-        // For English, ensure space after punctuation
-        terminators.forEach(terminator => {
-            const regex = new RegExp(`${terminator}\\s*`, 'g');
-            processedText = processedText.replace(regex, `${terminator} `);
-        });
-    }
-
-    // Trim any trailing spaces
-    return processedText.trim();
-}
 
 /**
  * Validates that a Gemini configuration is properly set up
