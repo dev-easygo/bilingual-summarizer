@@ -22,6 +22,13 @@ export interface ResponseStructureObject {
     exclude?: string[];
 }
 
+export interface GeminiConfig {
+    apiKey: string;
+    model?: string;
+    temperature?: number;
+    maxOutputTokens?: number;
+}
+
 export interface SummarizeOptions {
     title?: string;
     sentenceCount: number;
@@ -30,6 +37,8 @@ export interface SummarizeOptions {
     minLength: number;
     maxLength: number;
     responseStructure?: string[] | ResponseStructureObject | null;
+    gemini?: GeminiConfig | null;
+    useAI?: boolean;
 }
 
 export interface SummaryResult {

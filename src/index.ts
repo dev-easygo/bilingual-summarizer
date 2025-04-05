@@ -1,5 +1,5 @@
 import readingTime from 'reading-time';
-import { SummarizeOptions, SummaryResult, ResponseStructureObject } from './types';
+import { SummarizeOptions, SummaryResult, ResponseStructureObject, GeminiConfig } from './types';
 import { analyzeSentiment, getSentimentLabel } from './analyzers/sentimentAnalyzer';
 import { detectLanguage, getLanguageName, isArabic } from './utils/languageDetection';
 import {
@@ -11,6 +11,7 @@ import {
 import { extractTopics, suggestRelatedTopics } from './utils/topicExtraction';
 import { summarizeText } from './extractors/summarizer';
 import { summarizeArabicText } from './extractors/arabicSummarizer';
+import { summarizeWithGeminiAI, isGeminiConfigValid } from './extractors/geminiSummarizer';
 
 /**
  * Default options for the summarize function
@@ -21,7 +22,9 @@ const DEFAULT_OPTIONS: SummarizeOptions = {
     includeImage: true,
     minLength: 100,
     maxLength: 2000,
-    responseStructure: null
+    responseStructure: null,
+    gemini: null,
+    useAI: false
 };
 
 /**
@@ -90,7 +93,7 @@ function filterResultFields(result: Record<string, any>, responseStructure: stri
  * @param options Optional configuration options
  * @returns A summary result object
  */
-export function summarize(content: string, options: Partial<SummarizeOptions> = {}): SummaryResult | Record<string, any> {
+export async function summarize(content: string, options: Partial<SummarizeOptions> = {}): Promise<SummaryResult | Record<string, any>> {
     try {
         // Merge default and user options
         const finalOptions: SummarizeOptions = {
@@ -135,18 +138,32 @@ export function summarize(content: string, options: Partial<SummarizeOptions> = 
         const languageResult = detectLanguage(cleanedText);
         const language = languageResult.language;
 
-        // Generate summary using the appropriate algorithm for the language
-        // Make sure we respect the sentenceCount option
-        const rawSummary = summarizeText(cleanedText, Math.min(finalOptions.sentenceCount, 5));
+        // Generate summary using the appropriate method
+        let summary: string;
 
-        // Split summary into sentences
-        const sentencesArr = extractSentences(rawSummary);
+        // Check if Gemini AI should be used
+        if (finalOptions.useAI && finalOptions.gemini) {
+            // Validate Gemini configuration
+            if (!isGeminiConfigValid(finalOptions.gemini)) {
+                throw new Error('Invalid Gemini configuration. API key is required.');
+            }
 
-        // Limit to the specified number of sentences
-        const limitedSentences = sentencesArr.slice(0, finalOptions.sentenceCount);
-
-        // Join the limited sentences back into a summary
-        const summary = limitedSentences.join(' ');
+            // Generate summary using Gemini AI
+            try {
+                summary = await summarizeWithGeminiAI(
+                    cleanedText,
+                    finalOptions.sentenceCount,
+                    finalOptions.gemini
+                );
+            } catch (aiError) {
+                console.error('Gemini AI summarization failed, falling back to default summarizer:', aiError);
+                // Fall back to traditional summarization if AI fails
+                summary = summarizeText(cleanedText, finalOptions.sentenceCount);
+            }
+        } else {
+            // Use traditional summarization
+            summary = summarizeText(cleanedText, finalOptions.sentenceCount);
+        }
 
         // Extract topics
         const topics = extractTopics(cleanedText);
@@ -234,5 +251,20 @@ export function summarizeArabic(text: string, sentenceCount: number = 5): string
     return summarizeArabicText(text, sentenceCount);
 }
 
+/**
+ * Direct API to summarize text using Google's Gemini AI
+ * @param text The text to summarize
+ * @param sentenceCount The number of sentences to include in the summary
+ * @param geminiConfig Configuration for the Gemini API
+ * @returns A promise that resolves to the summarized text
+ */
+export async function summarizeWithAI(text: string, sentenceCount: number = 5, geminiConfig: GeminiConfig): Promise<string> {
+    if (!isGeminiConfigValid(geminiConfig)) {
+        throw new Error('Invalid Gemini configuration. API key is required.');
+    }
+
+    return summarizeWithGeminiAI(text, sentenceCount, geminiConfig);
+}
+
 // Re-export utility functions
-export { extractTopics, isArabic }; 
+export { extractTopics, isArabic, isGeminiConfigValid }; 

@@ -11,6 +11,7 @@ A powerful text summarization package for Arabic and English content that provid
 - **Topic Extraction**: Identify the main topics discussed in the text
 - **Reading Time Estimation**: Calculate estimated reading time
 - **Customizable Response**: Control which fields are included in the response
+- **Google Gemini AI Integration**: Optional high-quality summaries using Google's Gemini models
 
 ## Installation
 
@@ -30,10 +31,10 @@ yarn add bilingual-summarizer
 const { summarize } = require('bilingual-summarizer');
 
 // Summarize English text
-const englishResult = summarize('Your English text here. It can be multiple sentences with various topics.');
+const englishResult = await summarize('Your English text here. It can be multiple sentences with various topics.');
 
 // Summarize Arabic text
-const arabicResult = summarize('النص العربي الخاص بك هنا. يمكن أن يكون جملًا متعددة بمواضيع مختلفة.');
+const arabicResult = await summarize('النص العربي الخاص بك هنا. يمكن أن يكون جملًا متعددة بمواضيع مختلفة.');
 
 console.log(englishResult);
 // {
@@ -52,6 +53,39 @@ console.log(englishResult);
 // }
 ```
 
+## Using Google Gemini AI for Summaries
+
+For enhanced summarization quality, you can use Google's Gemini AI models. This requires an API key from [Google AI Studio](https://ai.google.dev/).
+
+```javascript
+const { summarize } = require('bilingual-summarizer');
+
+// Summarize using Gemini AI
+const result = await summarize('Your text to summarize here.', {
+  useAI: true,
+  gemini: {
+    apiKey: 'YOUR_GEMINI_API_KEY', // Required
+    model: 'gemini-pro',           // Optional, defaults to gemini-pro
+    temperature: 0.2,              // Optional, controls creativity (0.0-1.0)
+    maxOutputTokens: 800           // Optional, limits response length
+  }
+});
+
+console.log(result);
+```
+
+You can also directly use the Gemini AI summarizer:
+
+```javascript
+const { summarizeWithAI } = require('bilingual-summarizer');
+
+const summary = await summarizeWithAI('Your text to summarize.', 3, {
+  apiKey: 'YOUR_GEMINI_API_KEY'
+});
+
+console.log(summary); // AI-generated summary with 3 sentences
+```
+
 ## Customizing Response Structure
 
 You can specify which fields you want to include in the response using the `responseStructure` option. It supports three formats:
@@ -62,7 +96,7 @@ You can specify which fields you want to include in the response using the `resp
 const { summarize } = require('bilingual-summarizer');
 
 // Only include specific fields in the response
-const result = summarize('Your text to summarize here.', {
+const result = await summarize('Your text to summarize here.', {
   responseStructure: ['summary', 'language', 'sentiment']
 });
 
@@ -78,7 +112,7 @@ console.log(result);
 ### 2. Object with Include Option
 
 ```javascript
-const result = summarize('Your text to summarize here.', {
+const result = await summarize('Your text to summarize here.', {
   responseStructure: {
     include: ['summary', 'language', 'sentiment']
   }
@@ -90,7 +124,7 @@ const result = summarize('Your text to summarize here.', {
 ### 3. Object with Exclude Option
 
 ```javascript
-const result = summarize('Your text to summarize here.', {
+const result = await summarize('Your text to summarize here.', {
   responseStructure: {
     exclude: ['topics', 'relatedTopics', 'difficulty']
   }
@@ -137,8 +171,14 @@ Analyze and summarize the provided text.
   - `responseStructure` (array | object): Control the response format:
     - As an array: Fields to include (e.g., `['summary', 'language', 'sentiment']`)
     - As an object: With either `include` or `exclude` property (e.g., `{include: ['summary']}` or `{exclude: ['topics']}`)
+  - `useAI` (boolean): Whether to use Google Gemini AI for summarization (default: false).
+  - `gemini` (object): Configuration for Gemini AI (required if `useAI` is true):
+    - `apiKey` (string): Your Gemini API key from Google AI Studio.
+    - `model` (string): The Gemini model to use (default: 'gemini-pro').
+    - `temperature` (number): Controls creativity in the output (default: 0.2).
+    - `maxOutputTokens` (number): Limits response length (default: 800).
 
-**Returns:** An object with the following properties (unless filtered by responseStructure):
+**Returns:** A Promise that resolves to an object with the following properties (unless filtered by responseStructure):
 - `ok` (boolean): Whether the summarization was successful.
 - `title` (string): Title of the content (extracted or provided).
 - `summary` (string): The summarized text.
@@ -162,6 +202,31 @@ Directly summarize Arabic text using specialized techniques.
 - `sentenceCount` (number, optional): Number of sentences in the summary (default: 5).
 
 **Returns:** A summarized version of the input text.
+
+### summarizeWithAI(text, sentenceCount, geminiConfig)
+
+Directly summarize text using Google's Gemini AI models.
+
+**Parameters:**
+- `text` (string): The text to summarize.
+- `sentenceCount` (number, optional): Number of sentences in the summary (default: 5).
+- `geminiConfig` (object): Configuration for Gemini AI:
+  - `apiKey` (string): Your Gemini API key from Google AI Studio (required).
+  - `model` (string): The Gemini model to use (default: 'gemini-pro').
+  - `temperature` (number): Controls creativity in the output (default: 0.2).
+  - `maxOutputTokens` (number): Limits response length (default: 800).
+
+**Returns:** A Promise that resolves to the AI-generated summary.
+
+## Getting a Gemini API Key
+
+To use the Gemini AI features:
+
+1. Visit [Google AI Studio](https://ai.google.dev/)
+2. Create an account or sign in with your Google account
+3. Navigate to the API keys section
+4. Create a new API key
+5. Copy the key and use it in your application
 
 ## References
 
