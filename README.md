@@ -65,7 +65,7 @@ const result = await summarize('Your text to summarize here.', {
   useAI: true,
   gemini: {
     apiKey: 'YOUR_GEMINI_API_KEY', // Required
-    model: 'gemini-pro',           // Optional, defaults to gemini-pro
+    model: 'gemini-1.5-flash',     // Optional, defaults to gemini-1.5-flash
     temperature: 0.2,              // Optional, controls creativity (0.0-1.0)
     maxOutputTokens: 800           // Optional, limits response length
   }
@@ -84,6 +84,29 @@ const summary = await summarizeWithAI('Your text to summarize.', 3, {
 });
 
 console.log(summary); // AI-generated summary with 3 sentences
+```
+
+### OpenAI Compatibility (Alternative Method)
+
+If you prefer, you can also use the OpenAI library with Gemini models by setting the base URL. This approach might be useful if you're transitioning from OpenAI to Gemini:
+
+```javascript
+import OpenAI from "openai";
+
+const openai = new OpenAI({
+    apiKey: "YOUR_GEMINI_API_KEY",
+    baseURL: "https://generativelanguage.googleapis.com/v1beta/openai/"
+});
+
+const response = await openai.chat.completions.create({
+    model: "gemini-1.5-flash",
+    messages: [
+        { role: "system", content: "You are a summarization assistant." },
+        { role: "user", content: "Summarize the following text: " + yourText },
+    ],
+});
+
+console.log(response.choices[0].message.content);
 ```
 
 ## Customizing Response Structure
@@ -174,7 +197,7 @@ Analyze and summarize the provided text.
   - `useAI` (boolean): Whether to use Google Gemini AI for summarization (default: false).
   - `gemini` (object): Configuration for Gemini AI (required if `useAI` is true):
     - `apiKey` (string): Your Gemini API key from Google AI Studio.
-    - `model` (string): The Gemini model to use (default: 'gemini-pro').
+    - `model` (string): The Gemini model to use (default: 'gemini-1.5-flash').
     - `temperature` (number): Controls creativity in the output (default: 0.2).
     - `maxOutputTokens` (number): Limits response length (default: 800).
 
@@ -212,7 +235,7 @@ Directly summarize text using Google's Gemini AI models.
 - `sentenceCount` (number, optional): Number of sentences in the summary (default: 5).
 - `geminiConfig` (object): Configuration for Gemini AI:
   - `apiKey` (string): Your Gemini API key from Google AI Studio (required).
-  - `model` (string): The Gemini model to use (default: 'gemini-pro').
+  - `model` (string): The Gemini model to use (default: 'gemini-1.5-flash').
   - `temperature` (number): Controls creativity in the output (default: 0.2).
   - `maxOutputTokens` (number): Limits response length (default: 800).
 
@@ -227,6 +250,17 @@ To use the Gemini AI features:
 3. Navigate to the API keys section
 4. Create a new API key
 5. Copy the key and use it in your application
+
+## Available Gemini Models
+
+Gemini offers several models with different capabilities and performance characteristics:
+
+- `gemini-1.5-flash`: Fastest model, good for most summarization tasks
+- `gemini-1.5-pro`: More powerful model for complex tasks
+- `gemini-1.0-pro`: Previous generation model
+- `gemini-1.0-pro-vision`: For processing images and text (if needed for future features)
+
+For the latest model names and capabilities, see the [Gemini documentation](https://ai.google.dev/models/gemini).
 
 ## References
 

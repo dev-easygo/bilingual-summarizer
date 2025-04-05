@@ -21,9 +21,10 @@ export async function summarizeWithGeminiAI(
         // Initialize the Google Generative AI with the provided API key
         const genAI = new GoogleGenerativeAI(geminiConfig.apiKey);
 
-        // Get the model - default to Gemini Pro if not specified
+        // Get the model - default to gemini-1.5-flash if not specified
+        // Using newer model names based on the API error message
         const model = genAI.getGenerativeModel({
-            model: geminiConfig.model || 'gemini-pro',
+            model: geminiConfig.model || 'gemini-1.5-flash',
             safetySettings: [
                 {
                     category: HarmCategory.HARM_CATEGORY_HATE_SPEECH,
