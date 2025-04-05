@@ -10,6 +10,7 @@ A powerful text summarization package for Arabic and English content that provid
 - **Sentiment Analysis**: Determine the sentiment of the text (positive, negative, neutral)
 - **Topic Extraction**: Identify the main topics discussed in the text
 - **Reading Time Estimation**: Calculate estimated reading time
+- **Customizable Response**: Control which fields are included in the response
 
 ## Installation
 
@@ -51,6 +52,27 @@ console.log(englishResult);
 // }
 ```
 
+## Customizing Response Structure
+
+You can specify which fields you want to include in the response using the `responseStructure` option:
+
+```javascript
+const { summarize } = require('bilingual-summarizer');
+
+// Only include specific fields in the response
+const result = summarize('Your text to summarize here.', {
+  responseStructure: ['summary', 'language', 'sentiment']
+});
+
+console.log(result);
+// {
+//   ok: true, // 'ok' is always included unless explicitly excluded
+//   summary: '...',
+//   language: 'en',
+//   sentiment: 'neutral'
+// }
+```
+
 ## Advanced Arabic Summarization
 
 This package includes specialized support for Arabic text using advanced NLP techniques:
@@ -84,8 +106,9 @@ Analyze and summarize the provided text.
   - `title` (string): Custom title for the summary.
   - `includeTitleFromContent` (boolean): Extract title from HTML content if available (default: true).
   - `includeImage` (boolean): Extract image URL from HTML content if available (default: true).
+  - `responseStructure` (array): Specific fields to include in the response (e.g., ['summary', 'language', 'sentiment']).
 
-**Returns:** An object with the following properties:
+**Returns:** An object with the following properties (unless filtered by responseStructure):
 - `ok` (boolean): Whether the summarization was successful.
 - `title` (string): Title of the content (extracted or provided).
 - `summary` (string): The summarized text.

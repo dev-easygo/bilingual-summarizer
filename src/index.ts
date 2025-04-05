@@ -20,8 +20,37 @@ const DEFAULT_OPTIONS: SummarizeOptions = {
     includeTitleFromContent: true,
     includeImage: true,
     minLength: 100,
-    maxLength: 2000
+    maxLength: 2000,
+    responseStructure: null
 };
+
+/**
+ * Filters the result object to include only specified fields
+ * @param result The full result object
+ * @param fields Array of field names to include
+ * @returns A filtered result object
+ */
+function filterResultFields(result: Record<string, any>, fields: string[]): Record<string, any> {
+    // Always include 'ok' field for error handling, unless explicitly filtered out
+    const includeOk = !fields.includes('ok') && result.ok !== undefined;
+
+    // Create a new object with only the specified fields
+    const filteredResult: Record<string, any> = {};
+
+    // Add 'ok' if needed
+    if (includeOk) {
+        filteredResult.ok = result.ok;
+    }
+
+    // Add requested fields
+    fields.forEach(field => {
+        if (field in result) {
+            filteredResult[field] = result[field];
+        }
+    });
+
+    return filteredResult;
+}
 
 /**
  * Summarizes and analyzes the provided text or HTML content
@@ -29,7 +58,7 @@ const DEFAULT_OPTIONS: SummarizeOptions = {
  * @param options Optional configuration options
  * @returns A summary result object
  */
-export function summarize(content: string, options: Partial<SummarizeOptions> = {}): SummaryResult {
+export function summarize(content: string, options: Partial<SummarizeOptions> = {}): SummaryResult | Record<string, any> {
     try {
         // Merge default and user options
         const finalOptions: SummarizeOptions = {
@@ -60,6 +89,11 @@ export function summarize(content: string, options: Partial<SummarizeOptions> = 
 
             if (finalOptions.includeImage) {
                 result.image = extractImageFromHTML(content);
+            }
+
+            // Filter result if responseStructure is provided
+            if (finalOptions.responseStructure && Array.isArray(finalOptions.responseStructure)) {
+                return filterResultFields(result, finalOptions.responseStructure);
             }
 
             return result;
@@ -122,10 +156,14 @@ export function summarize(content: string, options: Partial<SummarizeOptions> = 
             result.image = extractImageFromHTML(content);
         }
 
+        // Filter result if responseStructure is provided
+        if (finalOptions.responseStructure && Array.isArray(finalOptions.responseStructure)) {
+            return filterResultFields(result, finalOptions.responseStructure);
+        }
+
         return result;
     } catch (error) {
-        console.error('Summarization error:', error);
-        return {
+        const errorResult = {
             ok: false,
             error: 'Failed to summarize the content',
             message: error instanceof Error ? error.message : String(error),
@@ -137,6 +175,13 @@ export function summarize(content: string, options: Partial<SummarizeOptions> = 
             readingTime: 0,
             difficulty: 'medium'
         };
+
+        // Filter error result if responseStructure is provided
+        if (options.responseStructure && Array.isArray(options.responseStructure)) {
+            return filterResultFields(errorResult, options.responseStructure);
+        }
+
+        return errorResult;
     }
 }
 

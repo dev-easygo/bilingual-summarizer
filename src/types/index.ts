@@ -24,6 +24,7 @@ export interface SummarizeOptions {
     includeImage: boolean;
     minLength: number;
     maxLength: number;
+    responseStructure?: string[] | null;
 }
 
 export interface SummaryResult {
