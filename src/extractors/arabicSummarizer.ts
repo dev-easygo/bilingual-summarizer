@@ -4,18 +4,43 @@ import { extractSentences } from '../utils/textPreprocessing';
 // Optional imports for specialized Arabic NLP libraries
 let camelTools: any = null;
 let farasa: any = null;
+let arabicNLP: any = null;
+let nodeArabic: any = null;
 
-// Try to import optional Arabic NLP libraries
+// Try to import alternative Arabic NLP libraries
+// We'll try multiple options in order of preference
 try {
+    // First try @iamtung/camel-tools (may be deprecated)
     camelTools = require('@iamtung/camel-tools');
 } catch (error) {
-    console.log('CamelTools not available, falling back to basic Arabic processing');
+    // Silent fail - will try alternatives
 }
 
 try {
+    // Try farasa (may be deprecated)
     farasa = require('farasa');
 } catch (error) {
-    console.log('Farasa not available, falling back to basic Arabic processing');
+    // Silent fail - will try alternatives
+}
+
+try {
+    // Try arabic-nlp as alternative
+    arabicNLP = require('arabic-nlp');
+} catch (error) {
+    // Silent fail - will try alternatives
+}
+
+try {
+    // Try node-arabic as another alternative
+    nodeArabic = require('node-arabic');
+} catch (error) {
+    // Silent fail - will try alternatives
+}
+
+// Log only once what's available
+if (!camelTools && !farasa && !arabicNLP && !nodeArabic) {
+    console.log('Note: No specialized Arabic NLP libraries found. Using basic Arabic processing.');
+    console.log('For better Arabic results, consider alternatives like "arabic-linguist" or "arabicjs".');
 }
 
 /**
@@ -65,11 +90,11 @@ export function summarizeArabicText(text: string, sentenceCount: number = 5): st
 }
 
 /**
- * Checks if specialized Arabic NLP libraries are available
- * @returns True if either Farasa or CamelTools is available
+ * Check if we have any of the specialized Arabic NLP libraries available
+ * @returns Boolean indicating if any specialized libraries are available
  */
 function hasFarasaOrCamel(): boolean {
-    return camelTools !== null || farasa !== null;
+    return Boolean(camelTools || farasa || arabicNLP || nodeArabic);
 }
 
 /**
@@ -89,48 +114,59 @@ function scoreArabicSentencesAdvanced(sentences: string[]): Sentence[] {
         let words: string[] = [];
         let nouns: string[] = [];
 
-        if (farasa !== null) {
-            // Use Farasa for segmentation and POS tagging
+        if (camelTools) {
             try {
-                const analysis = farasa.segmentAndPOS(sentence);
-                words = analysis.segments || sentence.split(/\s+/);
-                // Extract nouns from POS tagging
-                nouns = analysis.segments.filter((w: any) =>
-                    w.pos && (w.pos === 'NOUN' || w.pos === 'PROP_NOUN')
-                ).map((w: any) => w.segment);
+                // Use CamelTools for morphological analysis if available
+                const analysis = camelTools.analyze(sentence);
+                words = analysis.tokens || sentence.split(/\s+/);
+                nouns = analysis.nouns || [];
             } catch (e) {
                 words = sentence.split(/\s+/);
             }
-        } else if (camelTools !== null) {
-            // Use CamelTools for morphological analysis
+        } else if (farasa) {
             try {
-                const analysis = camelTools.analyze(sentence);
+                // Use Farasa if available
+                const analysis = farasa.segment(sentence);
+                words = analysis.split(/\s+/);
+                // Farasa doesn't have direct noun detection
+            } catch (e) {
+                words = sentence.split(/\s+/);
+            }
+        } else if (arabicNLP) {
+            try {
+                // Use arabic-nlp if available
+                const analysis = arabicNLP.segment(sentence);
                 words = analysis.tokens || sentence.split(/\s+/);
-                // Extract nouns from analysis
-                nouns = analysis.tokens
-                    .filter((t: any) => t.pos && t.pos.startsWith('NOUN'))
-                    .map((t: any) => t.surface);
+                nouns = analysis.nouns || [];
+            } catch (e) {
+                words = sentence.split(/\s+/);
+            }
+        } else if (nodeArabic) {
+            try {
+                // Use node-arabic if available
+                const analysis = nodeArabic.tokenize(sentence);
+                words = analysis || sentence.split(/\s+/);
             } catch (e) {
                 words = sentence.split(/\s+/);
             }
         } else {
-            // Fallback to simple splitting
+            // Basic splitting if no library is available
             words = sentence.split(/\s+/);
         }
 
-        // Store noun count for initial PageRank score
-        nounScores[idx] = nouns.length;
-
-        // Count word frequency for TF-IDF style scoring
+        // Count word frequency
         words.forEach(word => {
-            if (word.length <= 1) return;
-
-            // Remove diacritics for better matching
+            // Normalize Arabic word - remove diacritics
             const normalizedWord = word.normalize('NFD')
-                .replace(/[\u064B-\u065F\u0670]/g, ''); // Remove Arabic diacritics
+                .replace(/[\u064B-\u065F\u0670]/g, '');
 
-            wordFrequency[normalizedWord] = (wordFrequency[normalizedWord] || 0) + 1;
+            if (normalizedWord.length > 1) {
+                wordFrequency[normalizedWord] = (wordFrequency[normalizedWord] || 0) + 1;
+            }
         });
+
+        // Store noun count for this sentence
+        nounScores[idx] = nouns.length;
     });
 
     // Score sentences using a modified PageRank approach
@@ -177,9 +213,10 @@ function scoreArabicSentencesAdvanced(sentences: string[]): Sentence[] {
             'من الضروري', 'حيث أن', 'بالإضافة إلى ذلك', 'وعلاوة على ذلك'
         ];
 
+        // Check if sentence contains any important markers
         for (const marker of importantMarkers) {
             if (text.includes(marker)) {
-                score *= 1.25;
+                score *= 1.3; // Boost score for sentences with important markers
                 break;
             }
         }
@@ -189,7 +226,7 @@ function scoreArabicSentencesAdvanced(sentences: string[]): Sentence[] {
 }
 
 /**
- * Basic scoring for Arabic sentences as fallback
+ * Basic scoring for Arabic sentences when specialized libraries aren't available
  * @param sentences Array of sentences
  * @returns Array of sentences with scores
  */
@@ -199,12 +236,15 @@ function scoreArabicSentencesBasic(sentences: string[]): Sentence[] {
 
     // Calculate word frequency across all sentences
     sentences.forEach(sentence => {
+        // Split sentence into words
         const words = sentence.split(/\s+/);
 
+        // Count word frequency
         words.forEach(word => {
+            // Skip very short words
             if (word.length <= 1) return;
 
-            // Remove diacritics
+            // Normalize Arabic word - remove diacritics
             const normalizedWord = word.normalize('NFD')
                 .replace(/[\u064B-\u065F\u0670]/g, '');
 

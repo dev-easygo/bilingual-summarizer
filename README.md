@@ -160,7 +160,7 @@ Note: You cannot use both `include` and `exclude` options simultaneously in the 
 
 ## Advanced Arabic Summarization
 
-This package includes specialized support for Arabic text using advanced NLP techniques:
+This package includes specialized support for Arabic text summarization:
 
 ```javascript
 const { summarizeArabic } = require('bilingual-summarizer');
@@ -170,13 +170,21 @@ const summary = summarizeArabic('النص العربي الذي تريد تلخ�
 console.log(summary); // Returns a concise summary with 3 sentences
 ```
 
-For even better Arabic text processing, you can install optional dependencies:
+### Optional Arabic NLP Libraries
+
+For enhanced Arabic text processing, the package attempts to use several Arabic NLP libraries if they're available. You may see console messages indicating that these libraries aren't found - this is normal and the package will fall back to basic processing methods.
+
+If you want to try optional Arabic NLP enhancements, you can install any of these packages:
 
 ```bash
-npm install @iamtung/camel-tools farasa
+npm install arabic-nlp
+# or
+npm install node-arabic
+# or
+npm install arabicjs
 ```
 
-These libraries will be automatically used when available to improve Arabic summarization quality.
+Note: The availability and compatibility of Arabic NLP libraries varies. The package is designed to work without them, but may provide better results with them installed.
 
 ## API Reference
 
@@ -261,6 +269,25 @@ Gemini offers several models with different capabilities and performance charact
 - `gemini-1.0-pro-vision`: For processing images and text (if needed for future features)
 
 For the latest model names and capabilities, see the [Gemini documentation](https://ai.google.dev/models/gemini).
+
+## Troubleshooting
+
+### Arabic Libraries Not Found
+
+If you see messages like:
+```
+Note: No specialized Arabic NLP libraries found. Using basic Arabic processing.
+```
+
+This is normal and doesn't affect functionality. The package will use its built-in basic Arabic processing which works well for most cases. If you need enhanced Arabic processing, try installing one of the optional dependencies mentioned above.
+
+### Gemini API Errors
+
+If you encounter errors with Gemini API integration:
+1. Make sure your API key is valid and hasn't expired
+2. Check that you're using a correct model name (model names may change over time)
+3. Verify your internet connection
+4. The package will automatically fall back to regular summarization if Gemini is unavailable
 
 ## References
 
