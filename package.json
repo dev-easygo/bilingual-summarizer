@@ -26,10 +26,9 @@
     "@google/generative-ai": "^0.24.0"
   },
   "optionalDependencies": {
-    "arabic-nlp": "^1.0.0",
-    "node-arabic": "^0.2.0",
-    "arabic-wordnet": "^0.1.0",
-    "ar-word-tokenizer": "^0.0.3"
+    "arabic-nlp": "^0.0.4",
+    "@flowdegree/arabic-strings": "^2.0.0",
+    "arabic-persian-reshaper": "^1.0.1"
   },
   "jest": {
     "preset": "ts-jest",

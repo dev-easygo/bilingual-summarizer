@@ -174,19 +174,18 @@ console.log(summary); // Returns a concise summary with 3 sentences
 
 For enhanced Arabic text processing, the package attempts to use several Arabic NLP libraries if they're available. The built-in Arabic processing will work well without these libraries, but they can enhance the results.
 
-If you want to try optional Arabic NLP enhancements, you can install any of these packages:
+If you want to try optional Arabic NLP enhancements, you can install these packages:
 
 ```bash
-npm install arabic-nlp
-# or
-npm install node-arabic
-# or
-npm install arabic-wordnet
-# or
-npm install ar-word-tokenizer
+npm install arabic-nlp@0.0.4 @flowdegree/arabic-strings arabic-persian-reshaper
 ```
 
-Note: The availability and compatibility of Arabic NLP libraries varies. If you encounter installation issues or 404 errors, don't worry - the package will automatically fall back to using its built-in Arabic processing methods.
+Each library provides different capabilities:
+- `arabic-nlp`: Basic Arabic natural language processing utilities
+- `@flowdegree/arabic-strings`: Enhanced Arabic string manipulation and processing
+- `arabic-persian-reshaper`: Helps with proper rendering of Arabic characters
+
+The package is designed to work even without these optional dependencies - it will automatically fall back to basic Arabic processing methods if the libraries aren't available.
 
 ## API Reference
 

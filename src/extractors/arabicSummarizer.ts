@@ -1,299 +1,235 @@
 import { Sentence } from '../types';
 import { extractSentences } from '../utils/textPreprocessing';
+import { isArabic } from '../utils/languageDetection';
 
-// Optional imports for specialized Arabic NLP libraries
+// Import available Arabic libraries
 let arabicNLP: any = null;
-let nodeArabic: any = null;
-let arabicWordnet: any = null;
-let arWordTokenizer: any = null;
+let arabicStrings: any = null;
+let arabicReshaper: any = null;
 
-// Try to import alternative Arabic NLP libraries
-// We'll try multiple options in order of preference
 try {
-    // Try to load arabic-nlp
     arabicNLP = require('arabic-nlp');
 } catch (error) {
-    // Silent fail - will try alternatives
+    // Optional dependency not installed
 }
 
 try {
-    // Try to load node-arabic
-    nodeArabic = require('node-arabic');
+    arabicStrings = require('@flowdegree/arabic-strings');
 } catch (error) {
-    // Silent fail - will try alternatives
+    // Optional dependency not installed
 }
 
 try {
-    // Try to load arabic-wordnet
-    arabicWordnet = require('arabic-wordnet');
+    arabicReshaper = require('arabic-persian-reshaper');
 } catch (error) {
-    // Silent fail - will try alternatives
-}
-
-try {
-    // Try to load ar-word-tokenizer
-    arWordTokenizer = require('ar-word-tokenizer');
-} catch (error) {
-    // Silent fail - will try alternatives
-}
-
-// Log only once what's available
-if (!arabicNLP && !nodeArabic && !arabicWordnet && !arWordTokenizer) {
-    console.log('Note: No specialized Arabic NLP libraries found. Using basic Arabic processing.');
-    console.log('Optional Arabic NLP libraries can improve results but are not required.');
+    // Optional dependency not installed
 }
 
 /**
- * Advanced Arabic text summarization using specialized NLP techniques
- * Based on research on Arabic text processing from academic papers
- * @param text The Arabic text to summarize
+ * Summarizes Arabic text using available Arabic NLP libraries
+ * @param text The text to summarize
  * @param sentenceCount The number of sentences to include in the summary
  * @returns A summarized version of the text
  */
 export function summarizeArabicText(text: string, sentenceCount: number = 5): string {
+    // Check if text is Arabic
+    if (!isArabic(text)) {
+        throw new Error('The provided text is not in Arabic');
+    }
+
+    // Check if we have any Arabic NLP tools available
+    const hasArabicNLP = !!arabicNLP;
+    const hasArabicStrings = !!arabicStrings;
+    const hasArabicReshaper = !!arabicReshaper;
+
     try {
-        if (!text || typeof text !== 'string' || text.trim().length === 0) {
-            return '';
-        }
+        // Extract sentences
+        const sentences = extractArabicSentences(text);
 
-        // Extract sentences from the text
-        const sentences = extractSentences(text);
-
-        // If there are fewer sentences than the requested count, return the original text
         if (sentences.length <= sentenceCount) {
-            return text;
+            return text; // Text is already short enough
         }
 
-        // Use advanced Arabic scoring if specialized libraries are available
-        // Otherwise fall back to basic scoring
-        const scoredSentences = hasAnyArabicLibrary()
-            ? scoreArabicSentencesAdvanced(sentences)
-            : scoreArabicSentencesBasic(sentences);
+        // Score sentences
+        const scoredSentences = scoreArabicSentences(sentences, hasArabicNLP, hasArabicStrings);
 
-        // Sort sentences by score in descending order
+        // Sort sentences by score
         const sortedSentences = [...scoredSentences].sort((a, b) => b.score - a.score);
 
-        // Take the top N sentences
-        const topSentences = sortedSentences.slice(0, sentenceCount);
+        // Select top sentences and maintain original order
+        const topSentenceIndices = sortedSentences
+            .slice(0, sentenceCount)
+            .map(s => s.index)
+            .sort((a, b) => a - b);
 
-        // Sort the top sentences by their original position to maintain flow
-        topSentences.sort((a, b) => a.index - b.index);
+        // Generate summary
+        const summary = topSentenceIndices.map(i => sentences[i]).join(' ');
 
-        // Combine the top sentences
-        return topSentences.map(s => s.text).join(' ');
+        // Apply Arabic reshaping if available
+        if (hasArabicReshaper) {
+            return arabicReshaper.reshape(summary);
+        }
+
+        return summary;
     } catch (error) {
-        console.error('Arabic summarization error:', error);
-        // Return a truncated version of the original text as fallback
-        const truncated = text.split('.').slice(0, sentenceCount).join('.').trim();
-        return truncated || text;
+        console.error('Error in Arabic summarization:', error);
+        // Fallback to simple extraction of first few sentences
+        return extractArabicSentences(text).slice(0, sentenceCount).join(' ');
     }
 }
 
 /**
- * Check if we have any of the specialized Arabic NLP libraries available
- * @returns Boolean indicating if any specialized libraries are available
+ * Extracts Arabic sentences from text
+ * @param text The text to extract sentences from
+ * @returns An array of sentences
  */
-function hasAnyArabicLibrary(): boolean {
-    return Boolean(arabicNLP || nodeArabic || arabicWordnet || arWordTokenizer);
+function extractArabicSentences(text: string): string[] {
+    // Arabic sentence endings: periods, question marks, exclamation marks
+    const sentenceEndMarkers = ['.', '?', '!', '؟', '!', ':', '؛', '\n\n'];
+
+    let sentences: string[] = [];
+    let currentSentence = '';
+
+    for (let i = 0; i < text.length; i++) {
+        currentSentence += text[i];
+
+        if (sentenceEndMarkers.includes(text[i]) &&
+            (i === text.length - 1 || text[i + 1] === ' ' || text[i + 1] === '\n')) {
+            sentences.push(currentSentence.trim());
+            currentSentence = '';
+        }
+    }
+
+    // Add any remaining text as a sentence
+    if (currentSentence.trim().length > 0) {
+        sentences.push(currentSentence.trim());
+    }
+
+    return sentences.filter(s => s.trim().length > 0);
 }
 
 /**
- * Advanced scoring for Arabic sentences using specialized NLP libraries
- * Based on research from: https://github.com/AhmedSoliman1999/Arabic-text-summarization
- * and https://medium.com/@alroumi.abdulmajeed/exploring-advanced-arabic-text-summarization-with-python-transformers-and-large-language-models-c9c637046827
- * @param sentences Array of sentences
- * @returns Array of sentences with scores
+ * Scores Arabic sentences for importance
+ * @param sentences Array of Arabic sentences
+ * @param hasArabicNLP Whether the arabic-nlp library is available
+ * @param hasArabicStrings Whether the @flowdegree/arabic-strings library is available
+ * @returns Array of scored sentences
  */
-function scoreArabicSentencesAdvanced(sentences: string[]): Sentence[] {
-    // Word frequency map for Arabic with morphological analysis
-    const wordFrequency: Record<string, number> = {};
-    const nounScores: Record<number, number> = {}; // Sentence index to noun count
+function scoreArabicSentences(
+    sentences: string[],
+    hasArabicNLP: boolean,
+    hasArabicStrings: boolean
+): Array<{ index: number; score: number; }> {
+    // Calculate word frequencies
+    const wordFrequencies = calculateArabicWordFrequencies(sentences, hasArabicStrings);
 
-    // Process sentences with specialized Arabic NLP tools if available
-    sentences.forEach((sentence, idx) => {
-        let words: string[] = [];
-        let nouns: string[] = [];
+    // Score each sentence
+    return sentences.map((sentence, index) => {
+        let score = 0;
 
-        if (arabicNLP) {
-            try {
-                // Use arabic-nlp if available
-                const analysis = arabicNLP.segment(sentence);
-                words = analysis.tokens || sentence.split(/\s+/);
-                nouns = analysis.nouns || [];
-            } catch (e) {
-                words = sentence.split(/\s+/);
+        // Basic scoring by word frequency
+        const words = sentence.split(/\s+/);
+        words.forEach(word => {
+            score += wordFrequencies[word] || 0;
+        });
+
+        // Normalize by sentence length to avoid favoring long sentences too much
+        score = words.length > 0 ? score / Math.sqrt(words.length) : 0;
+
+        // Position scoring - first and last sentences are usually important
+        if (index === 0 || index === sentences.length - 1) {
+            score *= 1.25;
+        }
+
+        // Boost sentences with common Arabic indicator phrases
+        const indicatorPhrases = [
+            'في الختام',
+            'من أهم',
+            'بشكل أساسي',
+            'يعتبر',
+            'الهدف الرئيسي',
+            'من الضروري',
+            'يجب أن نلاحظ',
+            'تبين أن'
+        ];
+
+        for (const phrase of indicatorPhrases) {
+            if (sentence.includes(phrase)) {
+                score *= 1.3;
+                break;
             }
-        } else if (nodeArabic) {
+        }
+
+        // Additional scoring using arabic-nlp if available
+        if (hasArabicNLP) {
             try {
-                // Use node-arabic if available
-                const analysis = nodeArabic.tokenize(sentence);
-                words = analysis || sentence.split(/\s+/);
-            } catch (e) {
-                words = sentence.split(/\s+/);
+                // Use available functions from arabic-nlp
+                // This is a placeholder for actual implementation
+                const importance = arabicNLP.getImportance ? arabicNLP.getImportance(sentence) : 0;
+                score += importance * 0.5;
+            } catch (error) {
+                // Ignore errors in optional library
             }
-        } else if (arWordTokenizer) {
+        }
+
+        return { index, score };
+    });
+}
+
+/**
+ * Calculates word frequencies in Arabic text
+ * @param sentences Array of Arabic sentences
+ * @param hasArabicStrings Whether the @flowdegree/arabic-strings library is available
+ * @returns Object mapping words to their frequencies
+ */
+function calculateArabicWordFrequencies(
+    sentences: string[],
+    hasArabicStrings: boolean
+): Record<string, number> {
+    const frequencies: Record<string, number> = {};
+    const stopWords = getArabicStopWords();
+
+    sentences.forEach(sentence => {
+        let words: string[];
+
+        if (hasArabicStrings && arabicStrings.tokenize) {
             try {
-                // Use ar-word-tokenizer if available
-                const tokens = arWordTokenizer.tokenize(sentence);
-                words = tokens || sentence.split(/\s+/);
-            } catch (e) {
-                words = sentence.split(/\s+/);
-            }
-        } else if (arabicWordnet) {
-            try {
-                // Use arabic-wordnet if available
-                const tokens = arabicWordnet.tokenize(sentence);
-                words = tokens || sentence.split(/\s+/);
-            } catch (e) {
+                // Use the library's tokenizer if available
+                words = arabicStrings.tokenize(sentence);
+            } catch (error) {
                 words = sentence.split(/\s+/);
             }
         } else {
-            // Basic splitting if no library is available
             words = sentence.split(/\s+/);
         }
 
-        // Count word frequency
         words.forEach(word => {
-            // Normalize Arabic word - remove diacritics
-            const normalizedWord = word.normalize('NFD')
-                .replace(/[\u064B-\u065F\u0670]/g, '');
+            const normalizedWord = word.trim().toLowerCase();
 
-            if (normalizedWord.length > 1) {
-                wordFrequency[normalizedWord] = (wordFrequency[normalizedWord] || 0) + 1;
+            // Skip stop words and very short words
+            if (normalizedWord.length < 2 || stopWords.includes(normalizedWord)) {
+                return;
             }
+
+            frequencies[normalizedWord] = (frequencies[normalizedWord] || 0) + 1;
         });
-
-        // Store noun count for this sentence
-        nounScores[idx] = nouns.length;
     });
 
-    // Score sentences using a modified PageRank approach
-    // Following techniques from Arabic text summarization research papers
-    return sentences.map((text, index) => {
-        // Skip very short sentences
-        if (text.length < 20) {
-            return { text, score: 0, index };
-        }
-
-        // Calculate word-frequency based score
-        const words = text.split(/\s+/);
-        let score = words.reduce((total, word) => {
-            if (word.length > 1) {
-                const normalizedWord = word.normalize('NFD')
-                    .replace(/[\u064B-\u065F\u0670]/g, '');
-                return total + (wordFrequency[normalizedWord] || 0);
-            }
-            return total;
-        }, 0);
-
-        // Normalize by sentence length
-        score = score / (words.length || 1);
-
-        // Add noun-based score components (Modified PageRank initial score)
-        const nounScore = nounScores[index] || 0;
-        score += nounScore * 0.5;
-
-        // Position weighting based on Arabic document structure research
-        if (index === 0) {
-            score *= 1.5; // First sentence is very important in Arabic texts
-        } else if (index === sentences.length - 1) {
-            score *= 1.3; // Last sentence often contains conclusions
-        } else if (index < sentences.length * 0.2) {
-            // First 20% of sentences typically contain key information in Arabic texts
-            score *= 1.2;
-        }
-
-        // Linguistic markers important in Arabic
-        const importantMarkers = [
-            'من أهم', 'يجب', 'ضروري', 'أساسي', 'مهم', 'خلاصة',
-            'نتيجة', 'إنّ', 'إن', 'لذلك', 'وبالتالي', 'وخلاصة القول',
-            'باختصار', 'بشكل أساسي', 'من الجدير بالذكر', 'لا بد من',
-            'من الضروري', 'حيث أن', 'بالإضافة إلى ذلك', 'وعلاوة على ذلك'
-        ];
-
-        // Check if sentence contains any important markers
-        for (const marker of importantMarkers) {
-            if (text.includes(marker)) {
-                score *= 1.3; // Boost score for sentences with important markers
-                break;
-            }
-        }
-
-        return { text, score, index };
-    });
+    return frequencies;
 }
 
 /**
- * Basic scoring for Arabic sentences when specialized libraries aren't available
- * @param sentences Array of sentences
- * @returns Array of sentences with scores
+ * Gets a list of common Arabic stop words
+ * @returns Array of Arabic stop words
  */
-function scoreArabicSentencesBasic(sentences: string[]): Sentence[] {
-    // Word frequency map
-    const wordFrequency: Record<string, number> = {};
-
-    // Calculate word frequency across all sentences
-    sentences.forEach(sentence => {
-        // Split sentence into words
-        const words = sentence.split(/\s+/);
-
-        // Count word frequency
-        words.forEach(word => {
-            // Skip very short words
-            if (word.length <= 1) return;
-
-            // Normalize Arabic word - remove diacritics
-            const normalizedWord = word.normalize('NFD')
-                .replace(/[\u064B-\u065F\u0670]/g, '');
-
-            wordFrequency[normalizedWord] = (wordFrequency[normalizedWord] || 0) + 1;
-        });
-    });
-
-    // Score each sentence
-    return sentences.map((text, index) => {
-        const words = text.split(/\s+/);
-
-        // Skip very short sentences
-        if (words.length < 2) {
-            return { text, score: 0, index };
-        }
-
-        // Calculate score based on word frequency
-        let score = words.reduce((total, word) => {
-            if (word.length > 1) {
-                const normalizedWord = word.normalize('NFD')
-                    .replace(/[\u064B-\u065F\u0670]/g, '');
-                return total + (wordFrequency[normalizedWord] || 0);
-            }
-            return total;
-        }, 0);
-
-        // Normalize score by sentence length
-        score = score / (words.length || 1);
-
-        // Position weighting
-        if (index === 0) {
-            score *= 1.5;
-        } else if (index === sentences.length - 1) {
-            score *= 1.3;
-        } else if (index < sentences.length * 0.2) {
-            score *= 1.2;
-        }
-
-        // Key phrases that indicate important sentences in Arabic
-        const importantTerms = [
-            'من أهم', 'يجب', 'ضروري', 'أساسي', 'مهم', 'خلاصة',
-            'نتيجة', 'إنّ', 'إن', 'لذلك', 'وبالتالي'
-        ];
-
-        for (const term of importantTerms) {
-            if (text.includes(term)) {
-                score *= 1.25;
-                break;
-            }
-        }
-
-        return { text, score, index };
-    });
+function getArabicStopWords(): string[] {
+    // Common Arabic stop words
+    return [
+        'من', 'إلى', 'عن', 'على', 'في', 'مع', 'هذا', 'هذه', 'ذلك', 'تلك',
+        'أنا', 'أنت', 'هو', 'هي', 'نحن', 'هم', 'كان', 'كانت', 'يكون', 'أن',
+        'لا', 'ما', 'و', 'أو', 'ثم', 'إن', 'إذا', 'حتى', 'قد', 'لقد',
+        'جدا', 'فقط', 'كل', 'بعض', 'مثل', 'عندما', 'كيف', 'لماذا', 'متى',
+        'أين', 'لكن', 'كما', 'بعد', 'قبل', 'خلال', 'منذ', 'بين', 'يا',
+        'ولكن', 'لذلك', 'بل', 'بينما', 'الذي', 'التي', 'الذين', 'اللواتي'
+    ];
 } 
