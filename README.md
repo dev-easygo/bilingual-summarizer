@@ -1,127 +1,122 @@
 # Bilingual Summarizer
 
-A text summarization and analysis package for both Arabic and English content. It provides a comprehensive analysis of text including language detection, sentiment analysis, topic extraction, reading time estimation, and text summarization.
+A powerful text summarization package for Arabic and English content that provides sentiment analysis, topic extraction, and more.
 
 ## Features
 
-- Automatic language detection (Arabic, English, and other languages)
-- Text summarization optimized for both Arabic and English
-- Sentiment analysis
-- Topic extraction
-- Reading time calculation
-- Text difficulty estimation
-- HTML content handling (title and image extraction)
+- **Bilingual Support**: Works with both Arabic and English text
+- **Advanced Arabic Processing**: Specialized algorithms for Arabic text summarization
+- **HTML Support**: Extract titles and meaningful content from HTML documents
+- **Sentiment Analysis**: Determine the sentiment of the text (positive, negative, neutral)
+- **Topic Extraction**: Identify the main topics discussed in the text
+- **Reading Time Estimation**: Calculate estimated reading time
 
 ## Installation
 
 ```bash
-# Using pnpm (recommended)
-pnpm add bilingual-summarizer
-
-# Using npm
 npm install bilingual-summarizer
+```
 
-# Using yarn
+Or using yarn:
+
+```bash
 yarn add bilingual-summarizer
 ```
 
-## Usage
+## Basic Usage
 
-### Basic Usage
+```javascript
+const { summarize } = require('bilingual-summarizer');
 
-```typescript
-import { summarize } from 'bilingual-summarizer';
+// Summarize English text
+const englishResult = summarize('Your English text here. It can be multiple sentences with various topics.');
 
-// Simple example with plain text
-const englishText = "This is a sample text in English that we want to summarize. It contains multiple sentences with different topics. The summarizer will extract the most important sentences and provide additional analysis like sentiment, topics, and reading time.";
+// Summarize Arabic text
+const arabicResult = summarize('النص العربي الخاص بك هنا. يمكن أن يكون جملًا متعددة بمواضيع مختلفة.');
 
-const result = summarize(englishText);
-console.log(result);
-/*
-{
-  ok: true,
-  sentiment: 0.2,
-  topics: ['summarizer', 'sentences', 'sentiment', 'text', 'topics', 'English'],
-  words: 35,
-  difficulty: 0.43,
-  minutes: 1,
-  language: 'en',
-  summary: "This is a sample text in English that we want to summarize. The summarizer will extract the most important sentences and provide additional analysis like sentiment, topics, and reading time."
-}
-*/
-
-// Arabic text example
-const arabicText = "هذا مثال لنص باللغة العربية نريد تلخيصه. يحتوي النص على عدة جمل بمواضيع مختلفة. سيقوم الملخص باستخراج أهم الجمل وتقديم تحليل إضافي مثل المشاعر والموضوعات ووقت القراءة.";
-
-const arabicResult = summarize(arabicText);
-console.log(arabicResult);
+console.log(englishResult);
+// {
+//   ok: true,
+//   title: '',
+//   summary: '...',
+//   language: 'en',
+//   languageName: 'English',
+//   sentiment: 'neutral',
+//   topics: ['...'],
+//   relatedTopics: ['...'],
+//   words: 12,
+//   sentences: 2,
+//   readingTime: 1,
+//   difficulty: 'easy'
+// }
 ```
 
-### Advanced Usage
+## Advanced Arabic Summarization
 
-```typescript
-import { summarize, isArabic, extractTopics } from 'bilingual-summarizer';
+This package includes specialized support for Arabic text using advanced NLP techniques:
 
-// With HTML content
-const htmlContent = `
-<h1>Article Title</h1>
-<p>First paragraph of the article with important information.</p>
-<p>Second paragraph with less important details.</p>
-<img src="https://example.com/image.jpg" />
-<p>Third paragraph with key conclusions.</p>
-`;
+```javascript
+const { summarizeArabic } = require('bilingual-summarizer');
 
-const result = summarize(htmlContent, {
-  sentenceCount: 2,  // Control the number of sentences in the summary
-  language: 'en'     // Force a specific language (optional)
-});
-
-// Using individual functions
-const text = "Some text to analyze";
-const isArabicText = isArabic(text);
-const topics = extractTopics(text, 5); // Get top 5 topics
+// Use the dedicated Arabic summarizer
+const summary = summarizeArabic('النص العربي الذي تريد تلخيصه هنا.', 3);
+console.log(summary); // Returns a concise summary with 3 sentences
 ```
+
+For even better Arabic text processing, you can install optional dependencies:
+
+```bash
+npm install @iamtung/camel-tools farasa
+```
+
+These libraries will be automatically used when available to improve Arabic summarization quality.
 
 ## API Reference
 
-### Main Function
+### summarize(text, options)
 
-#### `summarize(content: string, options?: SummarizerOptions): SummarizerResult`
-
-Summarizes and analyzes a given text, returning a comprehensive result object.
+Analyze and summarize the provided text.
 
 **Parameters:**
-- `content`: String containing HTML or plain text to analyze
-- `options`: (Optional) Configuration options
-  - `title`: Custom title (will override any extracted title)
-  - `sentenceCount`: Number of sentences to include in the summary
-  - `language`: Force a specific language (ISO code, e.g., 'en', 'ar')
+- `text` (string): The text to summarize.
+- `options` (object, optional): Configuration options.
+  - `sentenceCount` (number): Number of sentences in the summary (default: 5).
+  - `title` (string): Custom title for the summary.
+  - `includeTitleFromContent` (boolean): Extract title from HTML content if available (default: true).
+  - `includeImage` (boolean): Extract image URL from HTML content if available (default: true).
 
-**Returns:**
-An object containing:
-- `ok`: Boolean indicating if the operation was successful
-- `sentiment`: Numerical sentiment score (positive/negative)
-- `title`: Extracted or provided title
-- `topics`: Array of extracted topics
-- `words`: Word count
-- `difficulty`: Text complexity score (0-1)
-- `minutes`: Estimated reading time in minutes
-- `language`: Detected or provided language code
-- `summary`: The generated summary
-- `image`: URL of an image if one was found in the HTML content
+**Returns:** An object with the following properties:
+- `ok` (boolean): Whether the summarization was successful.
+- `title` (string): Title of the content (extracted or provided).
+- `summary` (string): The summarized text.
+- `language` (string): Detected language code.
+- `languageName` (string): Full name of the detected language.
+- `sentiment` (string): 'positive', 'negative', or 'neutral'.
+- `topics` (array): List of detected topics.
+- `relatedTopics` (array): List of related topics.
+- `words` (number): Word count of the original text.
+- `sentences` (number): Sentence count of the original text.
+- `readingTime` (number): Estimated reading time in minutes.
+- `difficulty` (string): 'easy', 'medium', or 'hard'.
+- `image` (string, optional): URL of the extracted image if available.
 
-### Utility Functions
+### summarizeArabic(text, sentenceCount)
 
-The package also exports several utility functions for finer-grained control:
+Directly summarize Arabic text using specialized techniques.
 
-- `extractTopics(text: string, maxTopics?: number): string[]`
-- `analyzeSentiment(text: string): SentimentResult`
-- `detectLanguage(text: string): LanguageDetectionResult`
-- `isArabic(text: string): boolean`
-- `getLanguageName(langCode: string): string`
-- `summarizeText(text: string, sentenceCount?: number): string`
-- `calculateDifficulty(text: string): number`
-- `cleanText(text: string): string`
+**Parameters:**
+- `text` (string): The Arabic text to summarize.
+- `sentenceCount` (number, optional): Number of sentences in the summary (default: 5).
+
+**Returns:** A summarized version of the input text.
+
+## References
+
+This package implements techniques from academic research on Arabic text summarization:
+
+- Modified PageRank algorithm for Arabic text (Ahmed Soliman, 2019)
+- Advanced morphological analysis for Arabic text
+- Specialized keyword extraction for Arabic content
 
 ## License
 

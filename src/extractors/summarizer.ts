@@ -3,6 +3,7 @@ import { Sentence } from '../types';
 import { isArabic, detectLanguage } from '../utils/languageDetection';
 import { cleanText, extractSentences } from '../utils/textPreprocessing';
 import { extractTopics } from './topicExtractor';
+import { summarizeArabicText as arabicSummarizer } from './arabicSummarizer';
 
 /**
  * Generates a summary of the given text
@@ -16,6 +17,15 @@ export function summarizeText(text: string, sentenceCount: number = 5): string {
             return '';
         }
 
+        // Check if the text is in Arabic
+        const isArabicText = isArabic(text);
+
+        // If the text is Arabic, use the specialized Arabic summarizer
+        if (isArabicText) {
+            return arabicSummarizer(text, sentenceCount);
+        }
+
+        // For English and other languages, use the general method
         // Extract sentences from the text
         const sentences = extractSentences(text);
 
@@ -24,13 +34,8 @@ export function summarizeText(text: string, sentenceCount: number = 5): string {
             return text;
         }
 
-        // Check if the text is in Arabic
-        const isArabicText = isArabic(text);
-
-        // Calculate sentence scores based on language
-        const scoredSentences = isArabicText
-            ? scoreArabicSentences(sentences)
-            : scoreEnglishSentences(sentences);
+        // Calculate sentence scores
+        const scoredSentences = scoreEnglishSentences(sentences);
 
         // Sort sentences by score in descending order
         const sortedSentences = [...scoredSentences].sort((a, b) => b.score - a.score);

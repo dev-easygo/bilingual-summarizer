@@ -10,6 +10,7 @@ import {
 } from './utils/textPreprocessing';
 import { extractTopics, suggestRelatedTopics } from './utils/topicExtraction';
 import { summarizeText } from './extractors/summarizer';
+import { summarizeArabicText } from './extractors/arabicSummarizer';
 
 /**
  * Default options for the summarize function
@@ -137,6 +138,16 @@ export function summarize(content: string, options: Partial<SummarizeOptions> = 
             difficulty: 'medium'
         };
     }
+}
+
+/**
+ * Direct API to summarize Arabic text using the specialized Arabic summarizer
+ * @param text The Arabic text to summarize
+ * @param sentenceCount The number of sentences to include in the summary
+ * @returns The summarized text
+ */
+export function summarizeArabic(text: string, sentenceCount: number = 5): string {
+    return summarizeArabicText(text, sentenceCount);
 }
 
 // Re-export utility functions

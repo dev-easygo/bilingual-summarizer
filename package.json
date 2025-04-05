@@ -44,6 +44,10 @@
     "sentiment": "^5.0.2",
     "sentiment-multilang": "^0.0.2"
   },
+  "optionalDependencies": {
+    "@iamtung/camel-tools": "^1.4.0",
+    "farasa": "^0.3.0"
+  },
   "jest": {
     "preset": "ts-jest",
     "testEnvironment": "node",
