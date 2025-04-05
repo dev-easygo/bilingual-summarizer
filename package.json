@@ -1,6 +1,6 @@
 {
   "name": "bilingual-summarizer",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "A text summarization package for Arabic and English content that provides sentiment analysis, topic extraction, and more",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
