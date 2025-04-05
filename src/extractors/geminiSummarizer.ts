@@ -54,8 +54,10 @@ export async function summarizeWithGeminiAI(
 
         // Create a prompt that clearly specifies what we want the model to do
         let prompt = isArabic
-            ? `أرجو تلخيص النص التالي في ${sentenceCount} جمل أو أقل، مع الحفاظ على النقاط الرئيسية والمعلومات الأساسية. النص هو:\n\n${text}`
-            : `Please summarize the following text in ${sentenceCount} sentences or less, preserving the key points and essential information. The text is:\n\n${text}`;
+            ? `أرجو تلخيص النص التالي في ${sentenceCount} جمل أو أقل، مع الحفاظ على النقاط الرئيسية والمعلومات الأساسية.${geminiConfig.objective ? ' يجب أن يكون التلخيص موضوعيًا تمامًا، دون أي آراء أو استنتاجات شخصية. اقتصر فقط على الحقائق والمعلومات الواردة في النص الأصلي.' : ''
+            } النص هو:\n\n${text}`
+            : `Please summarize the following text in ${sentenceCount} sentences or less, preserving the key points and essential information.${geminiConfig.objective ? ' Your summary must be completely objective, without any opinions or personal interpretations. Stick strictly to the facts and information presented in the original text.' : ''
+            } The text is:\n\n${text}`;
 
         // Generate content using the model
         const result = await model.generateContent(prompt);
