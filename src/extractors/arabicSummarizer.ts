@@ -67,7 +67,20 @@ export function summarizeArabicText(text: string, sentenceCount: number = 5): st
 
         // Apply Arabic reshaping if available
         if (hasArabicReshaper) {
-            return arabicReshaper.reshape(summary);
+            try {
+                // Use the proper API: PersianShaper.convertArabic or ArabicShaper.convertArabic
+                if (arabicReshaper.PersianShaper && arabicReshaper.PersianShaper.convertArabic) {
+                    return arabicReshaper.PersianShaper.convertArabic(summary);
+                } else if (arabicReshaper.ArabicShaper && arabicReshaper.ArabicShaper.convertArabic) {
+                    return arabicReshaper.ArabicShaper.convertArabic(summary);
+                } else {
+                    // Fallback if the expected API is not found
+                    return summary;
+                }
+            } catch (error) {
+                console.error('Error using Arabic reshaper:', error);
+                return summary;
+            }
         }
 
         return summary;

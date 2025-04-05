@@ -183,7 +183,7 @@ npm install arabic-nlp@0.0.4 @flowdegree/arabic-strings arabic-persian-reshaper
 Each library provides different capabilities:
 - `arabic-nlp`: Basic Arabic natural language processing utilities
 - `@flowdegree/arabic-strings`: Enhanced Arabic string manipulation and processing
-- `arabic-persian-reshaper`: Helps with proper rendering of Arabic characters
+- `arabic-persian-reshaper`: Helps with proper rendering of Arabic characters (using either PersianShaper.convertArabic or ArabicShaper.convertArabic methods)
 
 The package is designed to work even without these optional dependencies - it will automatically fall back to basic Arabic processing methods if the libraries aren't available.
 
