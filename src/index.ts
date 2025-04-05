@@ -1,5 +1,5 @@
 import readingTime from 'reading-time';
-import { SummarizeOptions, SummaryResult } from './types';
+import { SummarizeOptions, SummaryResult, ResponseStructureObject } from './types';
 import { analyzeSentiment, getSentimentLabel } from './analyzers/sentimentAnalyzer';
 import { detectLanguage, getLanguageName, isArabic } from './utils/languageDetection';
 import {
@@ -25,31 +25,63 @@ const DEFAULT_OPTIONS: SummarizeOptions = {
 };
 
 /**
- * Filters the result object to include only specified fields
+ * Processes the responseStructure option to determine which fields to include or exclude
  * @param result The full result object
- * @param fields Array of field names to include
+ * @param responseStructure The responseStructure option value
  * @returns A filtered result object
  */
-function filterResultFields(result: Record<string, any>, fields: string[]): Record<string, any> {
-    // Always include 'ok' field for error handling, unless explicitly filtered out
-    const includeOk = !fields.includes('ok') && result.ok !== undefined;
+function filterResultFields(result: Record<string, any>, responseStructure: string[] | ResponseStructureObject): Record<string, any> {
+    // If responseStructure is an array, use it as an include list
+    if (Array.isArray(responseStructure)) {
+        // Always include 'ok' field for error handling, unless explicitly filtered out
+        const includeOk = !responseStructure.includes('ok') && result.ok !== undefined;
 
-    // Create a new object with only the specified fields
-    const filteredResult: Record<string, any> = {};
+        // Create a new object with only the specified fields
+        const filteredResult: Record<string, any> = {};
 
-    // Add 'ok' if needed
-    if (includeOk) {
-        filteredResult.ok = result.ok;
+        // Add 'ok' if needed
+        if (includeOk) {
+            filteredResult.ok = result.ok;
+        }
+
+        // Add requested fields
+        responseStructure.forEach(field => {
+            if (field in result) {
+                filteredResult[field] = result[field];
+            }
+        });
+
+        return filteredResult;
     }
 
-    // Add requested fields
-    fields.forEach(field => {
-        if (field in result) {
-            filteredResult[field] = result[field];
-        }
-    });
+    // If responseStructure is an object, handle include/exclude options
+    const responseObj = responseStructure as ResponseStructureObject;
 
-    return filteredResult;
+    // Validate that both include and exclude aren't used together
+    if (responseObj.include && responseObj.exclude) {
+        throw new Error("Cannot use both 'include' and 'exclude' in responseStructure simultaneously");
+    }
+
+    // Handle include option
+    if (responseObj.include && Array.isArray(responseObj.include)) {
+        return filterResultFields(result, responseObj.include);
+    }
+
+    // Handle exclude option
+    if (responseObj.exclude && Array.isArray(responseObj.exclude)) {
+        const filteredResult: Record<string, any> = { ...result };
+
+        responseObj.exclude.forEach(field => {
+            if (field in filteredResult) {
+                delete filteredResult[field];
+            }
+        });
+
+        return filteredResult;
+    }
+
+    // If the object doesn't have valid include or exclude properties, return the original result
+    return result;
 }
 
 /**
@@ -92,7 +124,7 @@ export function summarize(content: string, options: Partial<SummarizeOptions> = 
             }
 
             // Filter result if responseStructure is provided
-            if (finalOptions.responseStructure && Array.isArray(finalOptions.responseStructure)) {
+            if (finalOptions.responseStructure) {
                 return filterResultFields(result, finalOptions.responseStructure);
             }
 
@@ -157,7 +189,7 @@ export function summarize(content: string, options: Partial<SummarizeOptions> = 
         }
 
         // Filter result if responseStructure is provided
-        if (finalOptions.responseStructure && Array.isArray(finalOptions.responseStructure)) {
+        if (finalOptions.responseStructure) {
             return filterResultFields(result, finalOptions.responseStructure);
         }
 
@@ -177,8 +209,15 @@ export function summarize(content: string, options: Partial<SummarizeOptions> = 
         };
 
         // Filter error result if responseStructure is provided
-        if (options.responseStructure && Array.isArray(options.responseStructure)) {
-            return filterResultFields(errorResult, options.responseStructure);
+        if (options.responseStructure) {
+            try {
+                return filterResultFields(errorResult, options.responseStructure);
+            } catch (filterError) {
+                // If filtering itself causes an error (e.g., invalid responseStructure),
+                // return the original error with an additional message
+                errorResult.message = `${errorResult.message}. Additionally: ${filterError instanceof Error ? filterError.message : String(filterError)}`;
+                return errorResult;
+            }
         }
 
         return errorResult;

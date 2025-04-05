@@ -17,6 +17,11 @@ export interface SummarizerResult {
     image?: string;
 }
 
+export interface ResponseStructureObject {
+    include?: string[];
+    exclude?: string[];
+}
+
 export interface SummarizeOptions {
     title?: string;
     sentenceCount: number;
@@ -24,7 +29,7 @@ export interface SummarizeOptions {
     includeImage: boolean;
     minLength: number;
     maxLength: number;
-    responseStructure?: string[] | null;
+    responseStructure?: string[] | ResponseStructureObject | null;
 }
 
 export interface SummaryResult {

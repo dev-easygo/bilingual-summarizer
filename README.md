@@ -54,7 +54,9 @@ console.log(englishResult);
 
 ## Customizing Response Structure
 
-You can specify which fields you want to include in the response using the `responseStructure` option:
+You can specify which fields you want to include in the response using the `responseStructure` option. It supports three formats:
+
+### 1. Array Format (Include Only)
 
 ```javascript
 const { summarize } = require('bilingual-summarizer');
@@ -72,6 +74,32 @@ console.log(result);
 //   sentiment: 'neutral'
 // }
 ```
+
+### 2. Object with Include Option
+
+```javascript
+const result = summarize('Your text to summarize here.', {
+  responseStructure: {
+    include: ['summary', 'language', 'sentiment']
+  }
+});
+
+// Result is the same as the array format
+```
+
+### 3. Object with Exclude Option
+
+```javascript
+const result = summarize('Your text to summarize here.', {
+  responseStructure: {
+    exclude: ['topics', 'relatedTopics', 'difficulty']
+  }
+});
+
+// Returns all fields except the excluded ones
+```
+
+Note: You cannot use both `include` and `exclude` options simultaneously in the same request. Doing so will throw an error.
 
 ## Advanced Arabic Summarization
 
@@ -106,7 +134,9 @@ Analyze and summarize the provided text.
   - `title` (string): Custom title for the summary.
   - `includeTitleFromContent` (boolean): Extract title from HTML content if available (default: true).
   - `includeImage` (boolean): Extract image URL from HTML content if available (default: true).
-  - `responseStructure` (array): Specific fields to include in the response (e.g., ['summary', 'language', 'sentiment']).
+  - `responseStructure` (array | object): Control the response format:
+    - As an array: Fields to include (e.g., `['summary', 'language', 'sentiment']`)
+    - As an object: With either `include` or `exclude` property (e.g., `{include: ['summary']}` or `{exclude: ['topics']}`)
 
 **Returns:** An object with the following properties (unless filtered by responseStructure):
 - `ok` (boolean): Whether the summarization was successful.
