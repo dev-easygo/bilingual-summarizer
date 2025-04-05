@@ -55,22 +55,15 @@ export async function summarizeWithGeminiAI(
 
         // Use a consistent English prompt format for all languages
         const prompt = `
-**Context**
+Context:  
+You are a professional linguist in the ${lang} language. Your task is to create a brief summary of articles and posts in a paragraph containing no more than ${sentenceCount} complete sentences. The last sentence does not need to be fully completed.
 
-You are acting as a language specialist for the specified language (${lang}). Your task is to summarize articles or posts into a short paragraph containing no more than a specific number of sentences (${sentenceCount}). You must ensure every sentence is complete and the summary feels finished.
+Instructions:  
+Analyze the text carefully. Do not use bullet points or numbered lists. Provide a unique, complete summary as your answer, and ensure it is written in the ${lang} language.
 
-**Instructions**
-
-* Carefully analyze the provided text.
-* Do not use bullet points or numbered lists in your summary.
-* Generate a complete and unique summary.
-* Your response must consist only of the summary itself.${geminiConfig.objective ? '\n* Your summary must be completely objective, without any opinions or personal interpretations. Stick strictly to the facts and information presented in the original text.' : ''}
-
-**Input**
-
-The text to be summarized is:
-${text}
-`;
+Input:  
+The text to summarize is:  
+${text}`;
 
         // Generate content using the model
         const result = await model.generateContent(prompt);
