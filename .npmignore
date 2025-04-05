@@ -1,0 +1,12 @@
+src/
+test/
+jest.config.js
+tsconfig.json
+.eslintrc
+coverage/
+.gitignore
+.git/
+.vscode/
+.DS_Store
+.idea/
+testFiles/
