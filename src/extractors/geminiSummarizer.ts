@@ -45,7 +45,7 @@ export async function summarizeWithGeminiAI(
             ],
             generationConfig: {
                 temperature: geminiConfig.temperature || 0.2,
-                maxOutputTokens: geminiConfig.maxOutputTokens || 800,
+                maxOutputTokens: geminiConfig.maxOutputTokens || 1000,
             },
         });
 

@@ -68,7 +68,7 @@ const result = await summarize('Your text to summarize here.', {
     apiKey: 'YOUR_GEMINI_API_KEY', // Required
     model: 'gemini-1.5-flash',     // Optional, defaults to gemini-1.5-flash
     temperature: 0.2,              // Optional, controls creativity (0.0-1.0)
-    maxOutputTokens: 800,          // Optional, limits response length
+    maxOutputTokens: 1000,          // Optional, limits response length
     objective: true                // Optional, defined in the interface but not currently implemented in the prompt
   }
 });
