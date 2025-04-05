@@ -76,6 +76,8 @@ const result = await summarize('Your text to summarize here.', {
 console.log(result);
 ```
 
+The AI prompt uses a professionally formatted template with clear instructions for both English and Arabic text, ensuring high-quality summaries with complete sentences. The prompt is provided in English regardless of the input language, as Gemini models have strong multilingual capabilities.
+
 You can also directly use the Gemini AI summarizer:
 
 ```javascript

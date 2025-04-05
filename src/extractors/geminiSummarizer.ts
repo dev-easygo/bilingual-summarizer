@@ -51,13 +51,26 @@ export async function summarizeWithGeminiAI(
 
         // Determine language to create appropriate prompt
         const isArabic = /[\u0600-\u06FF]/.test(text);
+        const lang = isArabic ? 'Arabic' : 'English';
 
-        // Create a prompt that clearly specifies what we want the model to do
-        let prompt = isArabic
-            ? `أرجو تلخيص النص التالي في ${sentenceCount} جمل أو أقل، مع الحفاظ على النقاط الرئيسية والمعلومات الأساسية. يجب أن تكون كل جملة كاملة ومنتهية بعلامة ترقيم مناسبة. النص يجب أن يكون مفهوماً ومتماسكاً.${geminiConfig.objective ? ' يجب أن يكون التلخيص موضوعيًا تمامًا، دون أي آراء أو استنتاجات شخصية. اقتصر فقط على الحقائق والمعلومات الواردة في النص الأصلي.' : ''
-            } النص هو:\n\n${text}`
-            : `Please summarize the following text in ${sentenceCount} sentences or less, preserving the key points and essential information. Each sentence must be complete and end with appropriate punctuation. The text should be coherent and flow naturally.${geminiConfig.objective ? ' Your summary must be completely objective, without any opinions or personal interpretations. Stick strictly to the facts and information presented in the original text.' : ''
-            } The text is:\n\n${text}`;
+        // Use a consistent English prompt format for all languages
+        const prompt = `
+**Context**
+
+You are acting as a language specialist for the specified language (${lang}). Your task is to summarize articles or posts into a short paragraph containing no more than a specific number of sentences (${sentenceCount}). You must ensure every sentence is complete and the summary feels finished.
+
+**Instructions**
+
+* Carefully analyze the provided text.
+* Do not use bullet points or numbered lists in your summary.
+* Generate a complete and unique summary.
+* Your response must consist only of the summary itself.${geminiConfig.objective ? '\n* Your summary must be completely objective, without any opinions or personal interpretations. Stick strictly to the facts and information presented in the original text.' : ''}
+
+**Input**
+
+The text to be summarized is:
+${text}
+`;
 
         // Generate content using the model
         const result = await model.generateContent(prompt);
